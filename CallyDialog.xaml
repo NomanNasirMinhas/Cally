@@ -1,0 +1,20 @@
+<Window x:Class="Cally.CallyDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="428" WindowStartupLocation="CenterScreen" SizeToContent="Height" WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize" ShowInTaskbar="False"
+    FontFamily="Segoe UI Variable Text, Segoe UI" Foreground="#F2F5FF" FontSize="14">
+  <Border Background="#121E33" BorderBrush="#56698A" BorderThickness="1" CornerRadius="16" Padding="20">
+    <DockPanel LastChildFill="True">
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,15" MouseLeftButtonDown="MoveDialog">
+        <Button DockPanel.Dock="Right" Click="Dismiss" Style="{StaticResource Action}" Padding="8,4" ToolTip="Close (Esc)" AutomationProperties.Name="Close dialog" Background="Transparent" FontFamily="Segoe MDL2 Assets" Content="&#xE8BB;"/>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Image Source="/Cally;component/Assets/Cally.ico" Width="23" Height="23"/><TextBlock Text="Cally" Margin="8,0" VerticalAlignment="Center" Foreground="#C5D1F4"/></StackPanel>
+      </DockPanel>
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+        <Button x:Name="CancelAction" Content="Cancel" Background="#293850" Style="{StaticResource Action}" Click="Dismiss" Margin="0,0,8,0"/>
+        <Button x:Name="AcceptAction" Style="{StaticResource Action}" Click="Accept"/>
+      </StackPanel>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+        <TextBlock Text="{Binding Title,RelativeSource={RelativeSource AncestorType=Window}}" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <StackPanel x:Name="Body"/>
+      </StackPanel></ScrollViewer>
+    </DockPanel>
+  </Border>
+</Window>

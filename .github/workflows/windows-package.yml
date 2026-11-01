@@ -1,0 +1,29 @@
+name: Package Cally for Windows
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Publish self-contained Windows x64 app
+        run: dotnet publish Cally.csproj -c Release -r win-x64 --self-contained true -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          if (!(Test-Path artifacts/publish/Cally.exe)) { throw 'Missing Cally.exe' }
+          Compress-Archive -Path artifacts/publish/* -DestinationPath artifacts/Cally-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cally-win-x64
+          path: artifacts/Cally-win-x64.zip
+          if-no-files-found: error

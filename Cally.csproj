@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net9.0-windows</TargetFramework><UseWPF>true</UseWPF><ApplicationIcon>Assets/Cally.ico</ApplicationIcon><ApplicationManifest>app.manifest</ApplicationManifest><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup><Resource Include="Assets/Cally.ico"/><FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms"/><PackageReference Include="Ical.Net" Version="5.2.0" /></ItemGroup>
+</Project>
+
+
+

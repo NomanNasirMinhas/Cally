@@ -1,0 +1,20 @@
+# .NET and IDE output
+[Bb]in/
+[Oo]bj/
+.vs/
+.idea/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+TestResults/
+*.binlog
+
+# Local distributions and credentials
+artifacts/
+publish/
+*.pfx
+*.p12
+.env
+.env.local
