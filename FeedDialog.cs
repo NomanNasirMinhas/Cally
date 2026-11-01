@@ -21,10 +21,24 @@ public class FeedDialog : CallyDialog
             if(input is TextBox or PasswordBox){ input.Background=new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(29,43,66)); input.Foreground=System.Windows.Media.Brushes.White; input.BorderBrush=System.Windows.Media.Brushes.SlateGray; } body.Children.Add(label); body.Children.Add(input);
         }
         Field("_Provider",provider); body.Children.Add(hint);
-        void Explain() => hint.Text=provider.SelectedIndex switch {
+        var setup=new Button {Style=(Style)FindResource("Action"), HorizontalAlignment=HorizontalAlignment.Left,
+            Margin=new Thickness(0,0,0,10)};
+        body.Children.Add(setup);
+        string SetupAddress()=>provider.SelectedIndex switch {
+            0=>"https://calendar.google.com/calendar/u/0/r/settings",
+            1=>"https://outlook.office.com/calendar/options/calendar/SharedCalendars",
+            _=>"https://www.icloud.com/calendar/"};
+        setup.Click+=(_,_)=>WebPage.Open(SetupAddress());
+        void Explain()
+        {
+            setup.Content=$"Open {provider.SelectedItem} calendar settings  ↗";
+            if(provider.SelectedIndex==2) setup.Content="Open iCloud Calendar  ↗";
+            setup.ToolTip=SetupAddress();
+            hint.Text=provider.SelectedIndex switch {
             0=>"Google Calendar → Settings → your calendar → Integrate calendar. Copy the secret address in iCal format. Treat this link like a password.",
             1=>"Outlook on the web → Settings → Calendar → Shared calendars → Publish a calendar. Use the ICS link. Anyone with that link can see the published details.",
             _=>"iCloud Calendar → Calendar Information → Public Calendar → Copy Link. Anyone with this link can view the shared calendar."};
+        }
         provider.SelectionChanged+=(_,_)=>Explain(); Explain();
         if(existing != null) { Title="Edit calendar"; provider.SelectedItem=existing.Provider; name.Text=existing.Name; url.Password=existing.Url; }
         Field("Calendar _name",name); Field("Calendar _link",url); body.Children.Add(error);
@@ -45,4 +59,5 @@ public class FeedDialog : CallyDialog
     readonly Func<bool> validate;
     protected override bool ValidateInput()=>validate();
 }
+
 

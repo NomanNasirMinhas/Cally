@@ -17,6 +17,11 @@ public partial class Widget : Window
     readonly Dictionary<Guid,List<Meeting>> events=new();
     readonly Dictionary<Guid,string> errors=new();
     readonly DispatcherTimer clock=new() {Interval=TimeSpan.FromSeconds(15)};
+    readonly DispatcherTimer updateTimer = new() { Interval=TimeSpan.FromHours(12) };
+    Task<Version?>? updateRequest;
+    Version? availableUpdate;
+    bool closed;
+
     readonly Forms.NotifyIcon tray=new() {Text="Cally"};
     DateTime refreshed=DateTime.MinValue;
     bool busy, desktop;
@@ -43,10 +48,42 @@ public partial class Widget : Window
             if (e.Key == Key.Apps || (e.Key == Key.F10 && Keyboard.Modifiers == ModifierKeys.Shift))
             { e.Handled=true; OpenMenu(PlacementMode.Bottom); }
         };
-        Loaded+=async (_,_)=> {desktop=Desktop.Attach(this); Draw(); await Refresh(); clock.Start();};
+        updateTimer.Tick+=async (_,_)=>await CheckUpdates(false);
+        Loaded+=async (_,_)=> {desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
         clock.Tick+=async (_,_)=> { if(DateTime.Now-refreshed>=TimeSpan.FromMinutes(2) || refreshed.Date!=DateTime.Today) await Refresh(); else Draw(); };
-        Closed+=(_,_)=>{clock.Stop(); var icon=tray.Icon; tray.Dispose(); icon?.Dispose();};
+        Closed+=(_,_)=>{closed=true; updateTimer.Stop(); clock.Stop(); var icon=tray.Icon; tray.Dispose(); icon?.Dispose();};
     }
+    async Task CheckUpdates(bool interactive)
+    {
+        try
+        {
+            var request=updateRequest ??= ReleaseUpdates.Fetch();
+            Version? latest;
+            try { latest=await request; }
+            finally { if(updateRequest==request) updateRequest=null; }
+            if(closed) return;
+            availableUpdate=latest!=null && latest>ReleaseUpdates.Installed ? latest : null;
+            UpdateLink.Visibility=availableUpdate==null ? Visibility.Collapsed : Visibility.Visible;
+            UpdateLink.Content=$"Cally {availableUpdate} available  ↗";
+            tray.Text=availableUpdate==null ? "Cally" : $"Cally {availableUpdate} available";
+            if(!interactive) return;
+            if(availableUpdate!=null)
+            {
+                if(CallyDialog.Prompt("Update available",$"Installed: {ReleaseUpdates.Installed}\nLatest: {availableUpdate}", "View release"))
+                    WebPage.Open(ReleaseUpdates.Page);
+            }
+            else if(latest==null) CallyDialog.Prompt("No public release found","GitHub did not return a published release for Cally.");
+            else CallyDialog.Prompt("Cally is up to date",$"Installed version: {ReleaseUpdates.Installed}");
+        }
+        catch(Exception error) when(error is System.Net.Http.HttpRequestException or OperationCanceledException or System.Text.Json.JsonException or FormatException)
+        {
+            if(interactive && !closed && CallyDialog.Prompt("Update check unavailable","Cally could not verify the latest version. Try again later or open GitHub Releases.", "Open releases"))
+                WebPage.Open(ReleaseUpdates.Page);
+        }
+    }
+
+    void OpenRelease(object sender,RoutedEventArgs e)=>WebPage.Open(ReleaseUpdates.Page);
+
     async void RefreshClicked(object sender, RoutedEventArgs e) => await Refresh();
 
     async Task Refresh()
@@ -247,6 +284,9 @@ public partial class Widget : Window
         }
         menu.Items.Add(size);
         menu.Items.Add(new Separator());
+        if(availableUpdate!=null)
+            Item($"View update · {availableUpdate}",()=>WebPage.Open(ReleaseUpdates.Page),"\uE896");
+        Item("Check for updates…",async ()=>await CheckUpdates(true),"\uE895");
         Item("Exit Cally",Close,"\uE711");
         activeMenu=menu;
         menu.Closed+=(_,_)=>{if(activeMenu==menu) activeMenu=null;};
@@ -257,6 +297,7 @@ public partial class Widget : Window
         menu.IsOpen=true;
     }
 }
+
 
 
 

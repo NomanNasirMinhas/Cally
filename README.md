@@ -15,3 +15,7 @@ Right-click the widget, click the account selector, or left- or right-click the 
 ### Windows distribution
 
 Each push to `master` builds a versioned GitHub Release. Under **Assets**, download **Cally-win-x64.msi**, run it, and launch Cally from the Start menu. The installer includes the .NET desktop runtime and supports upgrades and removal through Windows Settings. The WiX installer source is in [installer/Cally.wxs](installer/Cally.wxs).
+
+Cally checks GitHub Releases at startup and every 12 hours. Use **Check for updates…** in the widget or tray menu to check immediately. When a newer version is available, select the update in the widget or menu to open its GitHub release page and download the MSI.
+
+In **Connect a calendar** or **Edit calendar**, use the provider button to open Google Calendar settings, Outlook calendar sharing settings, or iCloud Calendar in your browser.

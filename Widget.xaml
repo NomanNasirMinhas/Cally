@@ -11,6 +11,7 @@
 <Border Margin="19,2,1,2" Background="#F0101C34" BorderBrush="#465673" BorderThickness="1" CornerRadius="15" Padding="9">
 <StackPanel><DockPanel><Button x:Name="RefreshButton" DockPanel.Dock="Right" Style="{StaticResource Action}" Background="Transparent" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;" AutomationProperties.Name="Refresh all calendars" ToolTip="Refresh all calendars now" Click="RefreshClicked"/><Button x:Name="Scope" DockPanel.Dock="Right" Style="{StaticResource Action}" Background="Transparent" Click="Menu" ToolTip="Filter accounts and manage Cally"/><Button ToolTip="Expand or collapse the agenda" x:Name="Today" HorizontalAlignment="Left" Style="{StaticResource Action}" Background="Transparent" Click="Toggle"/></DockPanel>
 <ScrollViewer x:Name="Panel" MaxHeight="370" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="Rows"/></ScrollViewer>
-<TextBlock x:Name="Status" Foreground="#C1CEEB" FontSize="12" Margin="8,4" TextWrapping="Wrap"/>
+<Button x:Name="UpdateLink" Visibility="Collapsed" HorizontalAlignment="Left" Margin="3,4" Style="{StaticResource Action}" Background="#304264" Click="OpenRelease" ToolTip="Open the latest Cally release on GitHub"/><TextBlock x:Name="Status" Foreground="#C1CEEB" FontSize="12" Margin="8,4" TextWrapping="Wrap"/>
 </StackPanel></Border></StackPanel></Window>
+
 
