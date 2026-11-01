@@ -1,0 +1,25 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Cally" Manufacturer="Cally" Version="$(var.Version)"
+           UpgradeCode="54D2CE93-82A3-4616-BDBC-52969213C14D" Scope="perMachine">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Cally is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <Icon Id="CallyIcon" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="CallyIcon" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Cally" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="MenuFolder" Name="Cally">
+        <Component Id="StartMenuEntry" Guid="4C17A41A-B9E4-4100-89D8-D11DAF495D38">
+          <Shortcut Id="LaunchCally" Name="Cally" Target="[INSTALLFOLDER]Cally.exe" WorkingDirectory="INSTALLFOLDER" Icon="CallyIcon" />
+          <RemoveFolder Id="RemoveMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKLM" Key="Software\Cally\Installer" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <Feature Id="Main" Title="Cally" Level="1">
+      <Files Include="$(var.PublishDir)\**" Directory="INSTALLFOLDER" />
+      <ComponentRef Id="StartMenuEntry" />
+    </Feature>
+  </Package>
+</Wix>
