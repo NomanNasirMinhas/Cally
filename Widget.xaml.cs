@@ -48,6 +48,9 @@ public partial class Widget : Window
             if (e.Key == Key.Apps || (e.Key == Key.F10 && Keyboard.Modifiers == ModifierKeys.Shift))
             { e.Handled=true; OpenMenu(PlacementMode.Bottom); }
         };
+        var desktopWatch=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(500)};
+        desktopWatch.Tick+=(_,_)=>{if(desktop)Desktop.RevealOnDesktop(this);};
+        desktopWatch.Start(); Closed+=(_,_)=>desktopWatch.Stop();
         updateTimer.Tick+=async (_,_)=>await CheckUpdates(false);
         Loaded+=async (_,_)=> {if(Environment.GetCommandLineArgs().Contains("--show-widget")) RevealWidget(); else desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
         clock.Tick+=async (_,_)=> { if(DateTime.Now-refreshed>=TimeSpan.FromMinutes(2) || refreshed.Date!=DateTime.Today) await Refresh(); else Draw(); };
@@ -340,6 +343,7 @@ public partial class Widget : Window
         menu.IsOpen=true;
     }
 }
+
 
 
 

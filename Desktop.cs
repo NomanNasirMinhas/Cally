@@ -35,22 +35,22 @@ internal static class Desktop
         SetWindowLong(handle,-16,(GetWindowLong(handle,-16) & ~0x40000000) | unchecked((int)0x80000000));
         SetWindowPos(handle,0,0,0,0,0,0x63);
     }
+    [DllImport("user32")] static extern nint GetForegroundWindow();
+    [DllImport("user32")] static extern bool IsIconic(nint window);
+    [DllImport("user32")] static extern bool ShowWindow(nint window,int command);
+    public static void RevealOnDesktop(Window widget)
+    {
+        var name=new System.Text.StringBuilder(64);
+        GetClassName(GetForegroundWindow(),name,64);
+        if(name.ToString() is not ("Progman" or "WorkerW")) return;
+        var handle=new WindowInteropHelper(widget).Handle;
+        if(IsIconic(handle) || !IsWindowVisible(handle)) ShowWindow(handle,4);
+        SetWindowPos(handle,0,0,0,0,0,0x53);
+    }
     public static bool Attach(Window widget)
     {
-        nint view=0;
-        EnumWindows((window,_) => { var name=new System.Text.StringBuilder(64); GetClassName(window,name,64); if(!IsWindowVisible(window) || name.ToString() is not ("Progman" or "WorkerW")) return true; var candidate=FindWindowEx(window,0,"SHELLDLL_DefView",null); if(candidate==0 || !IsWindowVisible(candidate)) return true; view=candidate; return false; },0);
-        if(view==0) return false;
+        // Keep the layered WPF surface in its own compositor window.
         var handle=new WindowInteropHelper(widget).Handle;
-        var pos=widget.PointToScreen(new(0,0));
-        var pixel=new Pixel { X=(int)pos.X,Y=(int)pos.Y };
-        ScreenToClient(view,ref pixel);
-        int style=GetWindowLong(handle,-16);
-        SetWindowLong(handle,-16,(style & ~unchecked((int)0x80000000)) | 0x40000000);
-        Marshal.SetLastPInvokeError(0);
-        if(SetParent(handle,view)==0 && Marshal.GetLastPInvokeError()!=0) { SetWindowLong(handle,-16,style); return false; }
-        SetWindowPos(handle,0,pixel.X,pixel.Y,0,0,0x71);
-        return true;
+        return SetWindowPos(handle,1,0,0,0,0,0x53);
     }
 }
-
-

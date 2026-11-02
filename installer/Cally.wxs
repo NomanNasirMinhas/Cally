@@ -17,7 +17,7 @@
         </Component>
       </Directory>
     </StandardDirectory>
-    <CustomAction Id="LaunchAfterInstall" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]Cally.exe&quot;" Execute="immediate" Return="asyncNoWait" Impersonate="yes" />
+    <CustomAction Id="LaunchAfterInstall" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]Cally.exe&quot; --show-widget" Execute="immediate" Return="asyncNoWait" Impersonate="yes" />
     <InstallExecuteSequence>
       <Custom Action="LaunchAfterInstall" After="InstallFinalize" Condition="NOT Installed AND NOT REMOVE AND UILevel &gt; 2" />
     </InstallExecuteSequence>
