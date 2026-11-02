@@ -22,7 +22,7 @@ jobs:
           $version = "1.$([math]::Floor($env:GITHUB_RUN_NUMBER / 65535)).$($env:GITHUB_RUN_NUMBER % 65535)"
           dotnet tool install wix --version 5.0.2 --tool-path "$env:RUNNER_TEMP/wix"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet publish Cally.csproj -c Release -r win-x64 --self-contained true -p:Version=$version -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish
+          dotnet publish Cally.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$version -p:DebugType=None -p:DebugSymbols=false -o artifacts/publish
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           & "$env:RUNNER_TEMP/wix/wix.exe" build installer/Cally.wxs -arch x64 -d Version=$version -d "PublishDir=$pwd/artifacts/publish" -d "IconPath=$pwd/Assets/Cally.ico" -o artifacts/Cally-win-x64.msi
       - name: Save installer
