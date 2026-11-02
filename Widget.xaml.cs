@@ -29,7 +29,7 @@ public partial class Widget : Window
     public Widget()
     {
         InitializeComponent();
-        settings=Preferences.Load(); Width=Math.Clamp(settings.Width,375,620);
+        settings=Preferences.Load(); Width=Math.Clamp(settings.Width,MinWidth,MaxWidth); Height=settings.Expanded?Math.Clamp(settings.Height,MinHeight,MaxHeight):MinHeight;
         var area=SystemParameters.WorkArea;
         Left=Math.Clamp(settings.X,area.Left,Math.Max(area.Left,area.Right-Width));
         Top=Math.Clamp(settings.Y,area.Top,Math.Max(area.Top,area.Bottom-170));
@@ -106,10 +106,41 @@ public partial class Widget : Window
     }
     static Brush Color(string value)=> (Brush)new BrushConverter().ConvertFromString(value)!;
     static TextBlock Label(string value,double size,Brush ink)=>new(){Text=value,FontSize=size,Foreground=ink,VerticalAlignment=VerticalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};
+    void ResizeWidget(object sender, DragDeltaEventArgs e)
+    {
+        Width=Math.Clamp(Width+e.HorizontalChange,MinWidth,MaxWidth);
+        if(settings.Expanded) Height=Math.Clamp(Height+e.VerticalChange,MinHeight,MaxHeight);
+    }
+    void FinishResize(object sender, DragCompletedEventArgs e)
+    {
+        settings.Width=Width;
+        if(settings.Expanded) settings.Height=Height;
+        settings.Save();
+    }
+    DateTime lastAlertCheck=DateTime.Now;
+    void CheckEventStarts(DateTime now)
+    {
+        var since=lastAlertCheck;
+        lastAlertCheck=now;
+        if(!settings.StartPopup && !settings.Notifications)return;
+        var titles=events.Values.SelectMany(list=>list).Where(m=>!m.AllDay && m.Start>since && m.Start<=now && (m.End>now || now-m.Start<TimeSpan.FromMinutes(1))).Select(TitleFor).ToArray();
+        if(titles.Length==0)return;
+        var message=string.Join(Environment.NewLine,titles);
+        if(settings.Notifications)tray.ShowBalloonTip(6000,"Starting now",message,Forms.ToolTipIcon.Info);
+        if(settings.StartPopup){
+            var popup=new CallyDialog {Title="Starting now",Topmost=true};
+            popup.Body.Children.Add(new TextBlock {Text=message,TextWrapping=TextWrapping.Wrap});
+            popup.AcceptAction.Content="Dismiss";
+            popup.CancelAction.Visibility=Visibility.Collapsed;
+            popup.ShowActivated=false;
+            popup.Show();
+        }
+    }
     void Draw()
     {
         var now=DateTime.Now; var selected=settings.Feeds.Where(f=>settings.Filter==null || settings.Filter==f.Id).ToList();
         var agenda=selected.SelectMany(f=>events.GetValueOrDefault(f.Id)??[]).Where(m=>m.Start.Date==now.Date || m.Start<now && m.End>now).OrderBy(m=>m.Start).ToList();
+        CheckEventStarts(now);
         next=agenda.FirstOrDefault(m=>!m.AllDay && m.End>now) ?? agenda.FirstOrDefault(m=>!m.AllDay && m.Start>=now);
         int minutes=next==null?0:Math.Max(0,(int)Math.Ceiling((next.Start-now).TotalMinutes));
         Count.Text=next==null?"—":minutes==0?"Now":minutes>99?$"{minutes/60}":minutes.ToString();
@@ -146,7 +177,7 @@ public partial class Widget : Window
         var info=new StackPanel();info.Children.Add(Label(TitleFor(m),15,Brushes.White));
         if(!settings.Private && m.Place.Length>0)info.Children.Add(Label(m.Place,13,Color("#BBC9ED")));Add(info,2);
         var detail=$"{TitleFor(m)} · {m.Start:t}–{m.End:t}"+(settings.Private?"":$" · {m.Place} · {m.Account}");
-        if(!settings.Private)Add(Label(m.Account.Length>12?m.Account[..12]+"…":m.Account,12,Color("#B2D7FF")),3);
+        if(!settings.Private){var account=Label(m.Account,12,Color("#B2D7FF"));account.TextWrapping=TextWrapping.Wrap;account.TextTrimming=TextTrimming.None;info.Children.Add(account);}
         var arrow=Label("›",18,Color("#CAD5F9"));
         arrow.Opacity=0;
         grid.ColumnDefinitions.Add(new(){Width=new GridLength(14)});
@@ -168,7 +199,7 @@ public partial class Widget : Window
     }
     void Launch(Meeting m){if(!settings.Private && m.Join!=null)try{Process.Start(new ProcessStartInfo(m.Join){UseShellExecute=true});}catch{CallyDialog.Prompt("Meeting link unavailable","Windows could not open the meeting link.");}}
     void Join(object sender,RoutedEventArgs e){if(next!=null)Launch(next);}
-    void Toggle(object sender,RoutedEventArgs e){settings.Expanded=!settings.Expanded;Save();}
+    void Toggle(object sender,RoutedEventArgs e){settings.Expanded=!settings.Expanded;Height=settings.Expanded?Math.Clamp(settings.Height,MinHeight,MaxHeight):MinHeight;Save();}
     void Privacy(){settings.Private=!settings.Private;Save();}
     void Save(){settings.Save();Draw();}
     async void Connect(){var dialog=new FeedDialog();if(dialog.ShowDialog()!=true || dialog.Result==null)return;settings.Feeds.Add(dialog.Result);settings.Filter=null;Save();await Refresh();}
@@ -274,15 +305,8 @@ public partial class Widget : Window
             },"\uE7E8",enabled);
         }
         catch (System.Security.SecurityException) { Item("Startup setting unavailable",()=>{}).IsEnabled=false; }
-        var size=Row("Widget width","\uE8B9");
-        foreach(var (label,delta) in new[]{("Increase width",30),("Decrease width",-30)})
-        {
-            var option=Row(label,delta>0?"\uE710":"\uE738");
-            option.IsEnabled=delta>0?Width<620:Width>375;
-            option.Click+=(_,_)=>{Width=settings.Width=Math.Clamp(Width+delta,375,620);Save();};
-            size.Items.Add(option);
-        }
-        menu.Items.Add(size);
+        Item("Show event-start popup",()=>{settings.StartPopup=!settings.StartPopup;Save();},"\uE7F4",settings.StartPopup);
+        Item("Windows event notifications",()=>{settings.Notifications=!settings.Notifications;Save();},"\uE91C",settings.Notifications);
         menu.Items.Add(new Separator());
         if(availableUpdate!=null)
             Item($"View update · {availableUpdate}",()=>WebPage.Open(ReleaseUpdates.Page),"\uE896");
@@ -297,6 +321,8 @@ public partial class Widget : Window
         menu.IsOpen=true;
     }
 }
+
+
 
 
 

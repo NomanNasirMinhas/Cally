@@ -11,14 +11,15 @@ public partial class CallyDialog : Window
         InitializeComponent();
         MaxHeight=Math.Max(240,SystemParameters.WorkArea.Height-32);
         Width=Math.Min(Width,SystemParameters.WorkArea.Width-24);
-        PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){e.Handled=true;DialogResult=false;}};
+        PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){e.Handled=true;Finish(false);}};
     }
+    void Finish(bool accepted){if(ShowActivated)DialogResult=accepted;else Close();}
     void MoveDialog(object sender,MouseButtonEventArgs e)
     {
         if(e.ChangedButton==MouseButton.Left && e.LeftButton==MouseButtonState.Pressed) DragMove();
     }
-    void Dismiss(object sender,RoutedEventArgs e)=>DialogResult=false;
-    void Accept(object sender,RoutedEventArgs e){if(ValidateInput()) DialogResult=true;}
+    void Dismiss(object sender,RoutedEventArgs e)=>Finish(false);
+    void Accept(object sender,RoutedEventArgs e){if(ValidateInput()) Finish(true);}
     protected virtual bool ValidateInput()=>true;
 
     public static bool Prompt(string title,string details,string action="Close",bool destructive=false)
@@ -32,3 +33,4 @@ public partial class CallyDialog : Window
         return dialog.ShowDialog()==true;
     }
 }
+

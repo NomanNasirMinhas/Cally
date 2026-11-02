@@ -18,6 +18,9 @@ public sealed class Preferences
     public bool Expanded { get; set; } = true;
     public double X { get; set; } = 64;
     public double Y { get; set; } = 60;
+    public double Height { get; set; } = 440;
+    public bool StartPopup { get; set; }
+    public bool Notifications { get; set; }
     public double Width { get; set; } = 430;
     public Guid? Filter { get; set; }
     static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Cally", "settings.bin");
@@ -82,3 +85,4 @@ public static class Calendars
         return result;
     }
 }
+

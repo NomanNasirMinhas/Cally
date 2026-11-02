@@ -17,9 +17,14 @@
         </Component>
       </Directory>
     </StandardDirectory>
+    <CustomAction Id="LaunchAfterInstall" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]Cally.exe&quot;" Execute="immediate" Return="asyncNoWait" Impersonate="yes" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchAfterInstall" After="InstallFinalize" Condition="NOT Installed AND NOT REMOVE AND UILevel &gt; 2" />
+    </InstallExecuteSequence>
     <Feature Id="Main" Title="Cally" Level="1">
       <Files Include="$(var.PublishDir)\**" Directory="INSTALLFOLDER" />
       <ComponentRef Id="StartMenuEntry" />
     </Feature>
   </Package>
 </Wix>
+
