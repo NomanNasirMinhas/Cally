@@ -32,7 +32,7 @@ public partial class Widget : Window
         settings=Preferences.Load(); Width=Math.Clamp(settings.Width,MinWidth,MaxWidth); Height=settings.Expanded?Math.Clamp(settings.Height,MinHeight,MaxHeight):MinHeight;
         var area=SystemParameters.WorkArea;
         Left=Math.Clamp(settings.X,area.Left,Math.Max(area.Left,area.Right-Width));
-        Top=Math.Clamp(settings.Y,area.Top,Math.Max(area.Top,area.Bottom-170));
+        Top=Math.Clamp(settings.Y,area.Top,Math.Max(area.Top,area.Bottom-Height));
         using (var stream = Application.GetResourceStream(new Uri("/Cally;component/Assets/Cally.ico", UriKind.Relative)).Stream)
         using (var icon = new System.Drawing.Icon(stream, Forms.SystemInformation.SmallIconSize))
             tray.Icon = (System.Drawing.Icon)icon.Clone();
@@ -49,9 +49,27 @@ public partial class Widget : Window
             { e.Handled=true; OpenMenu(PlacementMode.Bottom); }
         };
         updateTimer.Tick+=async (_,_)=>await CheckUpdates(false);
-        Loaded+=async (_,_)=> {desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
+        Loaded+=async (_,_)=> {if(Environment.GetCommandLineArgs().Contains("--show-widget")) RevealWidget(); else desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
         clock.Tick+=async (_,_)=> { if(DateTime.Now-refreshed>=TimeSpan.FromMinutes(2) || refreshed.Date!=DateTime.Today) await Refresh(); else Draw(); };
         Closed+=(_,_)=>{closed=true; updateTimer.Stop(); clock.Stop(); var icon=tray.Icon; tray.Dispose(); icon?.Dispose();};
+    }
+    void RevealWidget()
+    {
+        Desktop.Detach(this);
+        desktop=false;
+        WindowState=WindowState.Normal;
+        Show();
+        var area=Forms.Screen.PrimaryScreen!.WorkingArea;
+        Desktop.Move(this,new Point(area.Left+48,area.Top+48));
+        Topmost=true;
+        Activate();
+        Topmost=false;
+        Scope.Focus();
+        var location=PointToScreen(new Point());
+        var dpi=VisualTreeHelper.GetDpi(this);
+        settings.X=location.X/dpi.DpiScaleX;
+        settings.Y=location.Y/dpi.DpiScaleY;
+        Save();
     }
     async Task CheckUpdates(bool interactive)
     {
@@ -162,7 +180,7 @@ public partial class Widget : Window
         if(settings.Feeds.Count==0){var connect=new Button {Content="Connect a calendar",Style=(Style)FindResource("Action")};connect.Click+=(_,_)=>Connect();Rows.Children.Add(connect);}
         else if(agenda.Count==0 && !selected.Any(f=>errors.ContainsKey(f.Id))) Rows.Children.Add(Label("No events to show today",14,Brushes.White));
         Status.Text=string.Join(" · ",selected.Where(f=>errors.ContainsKey(f.Id)).Select(f=>errors[f.Id]));
-        if(!desktop) Status.Text+="  Desktop layer unavailable";
+        if(!desktop) Status.Text+="  Floating widget";
         Status.Visibility=string.IsNullOrWhiteSpace(Status.Text)?Visibility.Collapsed:Visibility.Visible;
     }
     string TitleFor(Meeting m)=>settings.Private?"Busy":m.Title;
@@ -255,7 +273,8 @@ public partial class Widget : Window
             menu.Items.Add(item);
             return item;
         }
-        if(fromTray) Item("Focus widget",()=>{Activate();Scope.Focus();},"\uE8A7");
+        if(!desktop) Item("Pin widget to desktop",()=>{desktop=Desktop.Attach(this);Draw();});
+        if(fromTray) Item("Show widget on main screen",RevealWidget,"\uE8A7");
         var accounts=Row("Calendar view","\uE787");
         menu.Items.Add(accounts);
         void Filter(string label, Guid? id)
@@ -321,6 +340,7 @@ public partial class Widget : Window
         menu.IsOpen=true;
     }
 }
+
 
 
 

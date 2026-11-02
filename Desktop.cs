@@ -25,10 +25,20 @@ internal static class Desktop
         if(parent != 0) ScreenToClient(parent,ref point);
         SetWindowPos(handle,0,point.X,point.Y,0,0,0x15);
     }
+    [DllImport("user32")] static extern bool IsWindowVisible(nint window);
+    [DllImport("user32",CharSet=CharSet.Unicode)] static extern int GetClassName(nint window,System.Text.StringBuilder name,int size);
+    public static void Detach(Window widget)
+    {
+        var handle=new WindowInteropHelper(widget).Handle;
+        if((GetWindowLong(handle,-16) & 0x40000000)==0) return;
+        SetParent(handle,0);
+        SetWindowLong(handle,-16,(GetWindowLong(handle,-16) & ~0x40000000) | unchecked((int)0x80000000));
+        SetWindowPos(handle,0,0,0,0,0,0x63);
+    }
     public static bool Attach(Window widget)
     {
         nint view=0;
-        EnumWindows((window,_) => { view=FindWindowEx(window,0,"SHELLDLL_DefView",null); return view==0; },0);
+        EnumWindows((window,_) => { var name=new System.Text.StringBuilder(64); GetClassName(window,name,64); if(!IsWindowVisible(window) || name.ToString() is not ("Progman" or "WorkerW")) return true; var candidate=FindWindowEx(window,0,"SHELLDLL_DefView",null); if(candidate==0 || !IsWindowVisible(candidate)) return true; view=candidate; return false; },0);
         if(view==0) return false;
         var handle=new WindowInteropHelper(widget).Handle;
         var pos=widget.PointToScreen(new(0,0));
@@ -38,8 +48,9 @@ internal static class Desktop
         SetWindowLong(handle,-16,(style & ~unchecked((int)0x80000000)) | 0x40000000);
         Marshal.SetLastPInvokeError(0);
         if(SetParent(handle,view)==0 && Marshal.GetLastPInvokeError()!=0) { SetWindowLong(handle,-16,style); return false; }
-        SetWindowPos(handle,0,pixel.X,pixel.Y,0,0,0x31);
+        SetWindowPos(handle,0,pixel.X,pixel.Y,0,0,0x71);
         return true;
     }
 }
+
 
