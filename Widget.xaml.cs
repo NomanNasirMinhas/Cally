@@ -29,6 +29,8 @@ public partial class Widget : Window
     public Widget()
     {
         InitializeComponent();
+        ShowActivated=false;
+        SourceInitialized+=(_,_)=>Desktop.Constrain(this);
         settings=Preferences.Load(); Width=Math.Clamp(settings.Width,MinWidth,MaxWidth); Height=settings.Expanded?Math.Clamp(settings.Height,MinHeight,MaxHeight):MinHeight;
         var area=SystemParameters.WorkArea;
         Left=Math.Clamp(settings.X,area.Left,Math.Max(area.Left,area.Right-Width));
@@ -52,22 +54,22 @@ public partial class Widget : Window
         desktopWatch.Tick+=(_,_)=>{if(desktop)Desktop.RevealOnDesktop(this);};
         desktopWatch.Start(); Closed+=(_,_)=>desktopWatch.Stop();
         updateTimer.Tick+=async (_,_)=>await CheckUpdates(false);
-        Loaded+=async (_,_)=> {if(Environment.GetCommandLineArgs().Contains("--show-widget")) RevealWidget(); else desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
+        Loaded+=async (_,_)=> {desktop=Desktop.Attach(this); Draw(); updateTimer.Start(); _=CheckUpdates(false); await Refresh(); clock.Start();};
         clock.Tick+=async (_,_)=> { if(DateTime.Now-refreshed>=TimeSpan.FromMinutes(2) || refreshed.Date!=DateTime.Today) await Refresh(); else Draw(); };
         Closed+=(_,_)=>{closed=true; updateTimer.Stop(); clock.Stop(); var icon=tray.Icon; tray.Dispose(); icon?.Dispose();};
     }
     void RevealWidget()
     {
-        Desktop.Detach(this);
-        desktop=false;
+
+        desktop=true;
         WindowState=WindowState.Normal;
         Show();
         var area=Forms.Screen.PrimaryScreen!.WorkingArea;
         Desktop.Move(this,new Point(area.Left+48,area.Top+48));
-        Topmost=true;
-        Activate();
-        Topmost=false;
-        Scope.Focus();
+
+
+        Desktop.Attach(this);
+
         var location=PointToScreen(new Point());
         var dpi=VisualTreeHelper.GetDpi(this);
         settings.X=location.X/dpi.DpiScaleX;
@@ -276,8 +278,8 @@ public partial class Widget : Window
             menu.Items.Add(item);
             return item;
         }
-        if(!desktop) Item("Pin widget to desktop",()=>{desktop=Desktop.Attach(this);Draw();});
-        if(fromTray) Item("Show widget on main screen",RevealWidget,"\uE8A7");
+
+        if(fromTray) Item("Reset desktop position",RevealWidget,"\uE8A7");
         var accounts=Row("Calendar view","\uE787");
         menu.Items.Add(accounts);
         void Filter(string label, Guid? id)
@@ -343,6 +345,7 @@ public partial class Widget : Window
         menu.IsOpen=true;
     }
 }
+
 
 
 
